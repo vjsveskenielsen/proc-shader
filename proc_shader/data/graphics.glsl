@@ -5,7 +5,7 @@ precision mediump float;
 // #extension GL_OES_standard_derivatives : enable
 vec4 color_in = vec4(1.,1.,1.,1.); //color A
 uniform vec2 res;
-uniform vec3 g0, g1, g2;
+uniform vec3 g0, g1, g2, g3, g4;
 
 //the following determines wether width or the height is the broadest side
 // and returns the
@@ -89,9 +89,9 @@ vec4 drawRing(vec4 tint, float pr, float lw, float bl) {
 
 vec4 evaluate(vec3 g) {
 	vec4 rgba = vec4(0.);
-	if (g.x > 0. && g.x <= 1.) rgba += drawLineH(color_in, g.x, g.y, g.z); //color, progress, linewidth, bleed
-	else if (g.x > 1. && g.x < 2.) rgba += drawLineV(color_in, g.x-1., g1.y, g1.z);
-	else if (g.x > 2. && g.x < 3.) rgba += drawRing(color_in, g.x-2., g1.y, g1.z);
+	if (g.x > 1. && g.x <= 2.) rgba += drawLineH(color_in, g.x-1., g.y, g.z); //color, progress, linewidth, bleed
+	else if (g.x > 2. && g.x < 3.) rgba += drawLineV(color_in, g.x-2, g1.y, g1.z);
+	else if (g.x > 3. && g.x < 4.) rgba += drawRing(color_in, g.x-3., g1.y, g1.z);
 	return rgba;
 }
 
@@ -100,6 +100,8 @@ void main( void ) {
  	color += evaluate(g0);
 	color += evaluate(g1);
 	color += evaluate(g2);
+	color += evaluate(g3);
+	color += evaluate(g4);
 
 	gl_FragColor = color;
 }

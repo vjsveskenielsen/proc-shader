@@ -1,6 +1,10 @@
 import de.looksgood.ani.*;
 int n = 5;
-int t = 0;
+int a_n; //current amount of animations
+Integer inactive = new Integer(0);
+Integer lineH = new Integer(1);
+Integer lineV = new Integer(2);
+Integer ring = new Integer(3);
 PShader graphics;
 ArrayList<Animation> animations = new ArrayList<Animation>();
 float linewidth = .1;
@@ -12,67 +16,77 @@ void setup() {
   Ani.init(this);
   Ani.setDefaultEasing(Ani.LINEAR);
   graphics = loadShader("data/graphics.glsl");
-  if (graphics.res != null) graphics.set("res", float(width), float(height));
+  graphics.set("res", float(width), float(height));
+  for (int i = 0; i<n; i++) {
+    animations.add(new Animation(inactive, i, 1.0, 0.0, 1.0));
+  }
 }
 
 void draw() {
-  background(0);
-  print("t: ", t, "//");
-  rect(0, 0, width, height);
-  for (int i = animations.size()-1; i >= 0; i--) {
-    Animation a = animations.get(i);
-    if (a.isActive == false) animations.remove(i);
-    else a.update();
+  for (Animation a : animations) {
+    a.update();
+    print("g" + a.target, "s:" + a.state, round(a.progress, 1));
+    print(" // ");
   }
   println();
+  background(0);
+  rect(0, 0, width, height);
+  shader(graphics);
 
-  //shader(graphics);
   String txt_fps = String.format(getClass().getName()+ "   [size %d/%d]   [fps %6.2f]", width, height, frameRate);
   surface.setTitle(txt_fps);
 
 }
 
 private static double round (double value, int precision) {
-    int scale = (int) Math.pow(10, precision);
-    return (double) Math.round(value * scale) / scale;
+  int scale = (int) Math.pow(10, precision);
+  return (double) Math.round(value * scale) / scale;
 }
 
 void keyPressed() {
-  if (keyCode==DOWN && animations.size()<n) {
-    animations.add(new Animation(t, "ring", 2., 1.0, 0.));
-    t++;
+  if (keyCode==DOWN && a_n < n) {
+    boolean found = false;
+    int id = 0;
+    while (found == false) {
+      if (animations.get(id).state == inactive) {
+        animations.set(id, new Animation(ring, id, 5.0, 0.0, 1.0));
+        found = true;
+      }
+      else id++;
+    }
+    a_n++;
   }
 }
 
 class Animation {
-  boolean isActive = true;
+  PVector output = new PVector(0.0, 0.0, 0.0);
   float progress; //animation progress (normalised)
-  float local_lw;
-  float local_bl;
-  String type; // easing type
+  float local_lw, local_bl;
+  int state;
   int target;
   Ani ani;
-  // type animation // speed // start // end
-  Animation(int _target, String _type, float localspeed, float start, float end) {
+  // state of object // output target // speed // start // end
+  Animation(int s, int t, float localspeed, float start, float end) {
     progress = start;
     local_lw = linewidth;
     local_bl = bleed;
-    type = _type;
-    target = _target;
+    state = s;
     ani = new Ani(this, localspeed, "progress", end, Ani.getDefaultEasing(), "onEnd:reset");
-    ani.start();
+    target = t;
   }
+
   void update() {
-    String gname = "g" + target;
-    float offset = 0.;
-    if (type=="ring") offset = 2.;
-    if (type=="lineV") offset = 1.;
-    PVector output = new PVector(progress+offset, local_lw, local_bl);
-    //graphics.set(gname, output);
+    PVector output = new PVector(progress+float(state), local_lw, local_bl);
+    graphics.set("g"+target, output);
   }
 
   void reset() {
-    isActive = false;
-    t--;
+    state = inactive;
+    /*
+    when the initial Animation objects gets added to animations, their Ani
+    objects runs and thus resets n times, causing a_n to be subtracted below 0.
+    The following line prevents this initial error.
+    */
+    if (a_n>0) a_n--;
   }
 }
